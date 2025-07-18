@@ -1,18 +1,30 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
+import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import Link from "next/link";
+import { ArrowLeft, Mail, Lock, Chrome, Sparkles } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirectTo') || '/dashboard';
-  
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const redirectTo = searchParams.get("redirectTo") ?? "/dashboard";
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +47,7 @@ export default function LoginPage() {
         router.push(redirectTo);
       }
     } catch (err) {
-      setError('An unexpected error occurred');
+      setError("An unexpected error occurred");
     } finally {
       setLoading(false);
     }
@@ -47,7 +59,7 @@ export default function LoginPage() {
 
     try {
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+        provider: "google",
         options: {
           redirectTo: `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(redirectTo)}`,
         },
@@ -58,103 +70,154 @@ export default function LoginPage() {
         setLoading(false);
       }
     } catch (err) {
-      setError('An unexpected error occurred');
+      setError("An unexpected error occurred");
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-900 to-slate-900 text-white flex items-center justify-center">
-      <div className="max-w-md w-full mx-4">
-        <div className="bg-white/10 rounded-xl p-8 border border-white/20">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-2">Welcome to Dupi</h1>
-            <p className="text-slate-300">Sign in to manage your mock APIs</p>
+    <div className="bg-background flex min-h-screen items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-6">
+        {/* Header */}
+        <div className="space-y-2 text-center">
+          <div className="flex justify-center">
+            <div className="bg-primary text-primary-foreground flex h-12 w-12 items-center justify-center rounded-lg text-xl font-bold">
+              D
+            </div>
           </div>
+          <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
+          <p className="text-muted-foreground">
+            Sign in to your account to continue
+          </p>
+        </div>
 
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium mb-2">
-                Email
-              </label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter your email"
-                required
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium mb-2">
-                Password
-              </label>
-              <input
-                type="password"
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter your password"
-                required
-              />
-            </div>
-
-            {error && (
-              <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-3">
-                <p className="text-red-300 text-sm">{error}</p>
+        <Card>
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-xl">Sign in</CardTitle>
+            <CardDescription>
+              Enter your credentials to access your account
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <div className="relative">
+                  <Mail className="text-muted-foreground absolute top-3 left-3 h-4 w-4" />
+                  <Input
+                    type="email"
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    className="pl-10"
+                    required
+                  />
+                </div>
               </div>
-            )}
 
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
-            >
-              {loading ? 'Signing in...' : 'Sign In'}
-            </Button>
-          </form>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <Lock className="text-muted-foreground absolute top-3 left-3 h-4 w-4" />
+                  <Input
+                    type="password"
+                    id="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
 
-          <div className="mt-6">
+              {error && (
+                <Card className="border-destructive/50 bg-destructive/5">
+                  <CardContent className="p-3">
+                    <p className="text-destructive text-sm">{error}</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              <Button type="submit" disabled={loading} className="w-full">
+                {loading ? (
+                  <>
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    Signing in...
+                  </>
+                ) : (
+                  "Sign In"
+                )}
+              </Button>
+            </form>
+
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/20" />
+                <Separator />
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-slate-900 text-slate-300">Or continue with</span>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background text-muted-foreground px-2">
+                  Or continue with
+                </span>
               </div>
             </div>
 
             <Button
+              variant="outline"
               onClick={handleGoogleLogin}
               disabled={loading}
-              className="w-full mt-4 bg-white text-black hover:bg-gray-100 disabled:opacity-50"
+              className="w-full"
             >
-              {loading ? 'Loading...' : 'Sign in with Google'}
+              <Chrome className="mr-2 h-4 w-4" />
+              {loading ? "Loading..." : "Sign in with Google"}
             </Button>
-          </div>
 
-          <div className="mt-6 text-center">
-            <p className="text-slate-300">
-              Don't have an account?{' '}
-              <Link 
-                href={`/auth/signup${redirectTo !== '/dashboard' ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ''}`}
-                className="text-blue-400 hover:text-blue-300"
+            <div className="text-center text-sm">
+              <span className="text-muted-foreground">
+                Don&apos;t have an account?{" "}
+              </span>
+              <Link
+                href={`/auth/signup${redirectTo !== "/dashboard" ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ""}`}
+                className="text-primary hover:underline"
               >
                 Sign up
               </Link>
-            </p>
-          </div>
+            </div>
+          </CardContent>
+        </Card>
 
-          <div className="mt-4 text-center">
-            <Link href="/" className="text-slate-400 hover:text-slate-300 text-sm">
-              ← Back to home
+        <div className="text-center">
+          <Button variant="ghost" asChild size="sm">
+            <Link href="/">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to home
             </Link>
-          </div>
+          </Button>
         </div>
+
+        {/* Features Preview */}
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="p-4">
+            <div className="mb-2 flex items-center space-x-2">
+              <Sparkles className="text-primary h-4 w-4" />
+              <h3 className="text-primary font-semibold">
+                What you&apos;ll get
+              </h3>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="secondary" className="text-xs">
+                Mock API Generation
+              </Badge>
+              <Badge variant="secondary" className="text-xs">
+                TypeScript Support
+              </Badge>
+              <Badge variant="secondary" className="text-xs">
+                Real-time Data
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

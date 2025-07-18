@@ -3,6 +3,35 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useProject } from "@/lib/hooks/use-projects";
 import {
   useCreateEndpoint,
@@ -11,6 +40,143 @@ import {
 import { useGenerateMockData } from "@/lib/hooks/use-mock-data";
 import { useAuth } from "@/lib/auth/context";
 import type { CreateEndpointParams } from "@/lib/api/types";
+import {
+  ArrowLeft,
+  Plus,
+  Database,
+  Zap,
+  Clock,
+  AlertTriangle,
+  CheckCircle,
+  Copy,
+  Play,
+  Trash2,
+  Code,
+  Settings,
+  ExternalLink,
+  Terminal,
+  Globe,
+  Activity,
+  Sparkles,
+  Layers,
+  Cpu,
+} from "lucide-react";
+
+function ProjectDetailSkeleton() {
+  return (
+    <div className="from-background via-background to-muted/20 min-h-screen bg-gradient-to-br">
+      <div className="container mx-auto px-4 py-8">
+        <div className="mx-auto max-w-7xl space-y-8">
+          {/* Header Skeleton */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-3">
+              <Skeleton className="h-10 w-80" />
+              <Skeleton className="h-5 w-96" />
+            </div>
+            <div className="flex gap-4">
+              <Skeleton className="h-12 w-32" />
+              <Skeleton className="h-12 w-40" />
+            </div>
+          </div>
+
+          {/* Project Info Skeleton */}
+          <div className="from-primary/10 via-primary/5 to-background border-primary/20 relative overflow-hidden rounded-2xl border bg-gradient-to-r p-8">
+            <Skeleton className="mb-4 h-8 w-64" />
+            <Skeleton className="mb-6 h-5 w-96" />
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+            </div>
+          </div>
+
+          {/* Stats Skeleton */}
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Card
+                key={i}
+                className="from-background to-muted/30 border-0 bg-gradient-to-br shadow-lg"
+              >
+                <CardContent className="p-6">
+                  <div className="space-y-3">
+                    <Skeleton className="h-8 w-16" />
+                    <Skeleton className="h-6 w-24" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Endpoints Skeleton */}
+          <Card className="from-background to-muted/30 border-0 bg-gradient-to-br shadow-lg">
+            <CardHeader>
+              <Skeleton className="h-7 w-40" />
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="border-muted/50 from-background to-muted/20 rounded-xl border bg-gradient-to-r p-6"
+                >
+                  <div className="space-y-3">
+                    <Skeleton className="h-6 w-48" />
+                    <Skeleton className="h-4 w-64" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+  variant = "default",
+  description,
+}: {
+  title: string;
+  value: number;
+  icon: React.ComponentType<{ className?: string }>;
+  variant?: "default" | "success" | "warning" | "destructive";
+  description?: string;
+}) {
+  const variantStyles = {
+    default: "bg-gradient-to-br from-primary/20 to-primary/10 text-primary",
+    success:
+      "bg-gradient-to-br from-green-500/20 to-green-500/10 text-green-600",
+    warning:
+      "bg-gradient-to-br from-yellow-500/20 to-yellow-500/10 text-yellow-600",
+    destructive: "bg-gradient-to-br from-red-500/20 to-red-500/10 text-red-600",
+  };
+
+  return (
+    <Card className="from-background to-muted/30 group border-0 bg-gradient-to-br shadow-lg transition-all duration-300 hover:shadow-xl">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <p className="text-muted-foreground text-sm font-medium">{title}</p>
+            <p className="text-3xl font-bold">{value.toLocaleString()}</p>
+            {description && (
+              <p className="text-muted-foreground text-xs">{description}</p>
+            )}
+          </div>
+          <div
+            className={`flex h-14 w-14 items-center justify-center rounded-xl ${variantStyles[variant]} transition-transform duration-300 group-hover:scale-110`}
+          >
+            <Icon className="h-7 w-7" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -30,49 +196,57 @@ export default function ProjectDetailPage() {
   const [selectedEndpointId, setSelectedEndpointId] = useState<string | null>(
     null,
   );
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    http_method: "GET" as const,
+    interface_code: "",
+  });
 
   // Show auth loading state only if we don't have data yet
   if (authLoading && !project) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-blue-900 to-slate-900 text-white">
-        <div className="text-xl">Loading...</div>
-      </div>
-    );
+    return <ProjectDetailSkeleton />;
   }
 
   // Show data loading state only if we have a user and no data yet
   if (user && isLoading && !project) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-blue-900 to-slate-900 text-white">
-        <div className="text-xl">Loading project...</div>
-      </div>
-    );
+    return <ProjectDetailSkeleton />;
   }
 
   if (error || !project) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-blue-900 to-slate-900 text-white">
-        <div className="text-center">
-          <h1 className="mb-4 text-2xl font-bold">Project Not Found</h1>
-          <p className="mb-6 text-red-300">{error?.message}</p>
-          <Button
-            onClick={() => router.push("/")}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            Go Home
-          </Button>
+      <div className="from-background via-background to-muted/20 min-h-screen bg-gradient-to-br">
+        <div className="container mx-auto px-4 py-8">
+          <div className="mx-auto max-w-2xl text-center">
+            <Card className="border-destructive/50 bg-destructive/5 shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-destructive">
+                  Project Not Found
+                </CardTitle>
+                <CardDescription>{error?.message}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button onClick={() => router.push("/dashboard")}>
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Dashboard
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     );
   }
 
-  const handleCreateEndpoint = async (formData: FormData) => {
+  const handleCreateEndpoint = async (e: React.FormEvent) => {
+    e.preventDefault();
+
     const data: CreateEndpointParams = {
       project_id: projectId,
-      name: formData.get("name") as string,
-      description: (formData.get("description") as string) || undefined,
-      interface_code: formData.get("interface_code") as string,
-      http_method: (formData.get("http_method") as any) || "GET",
+      name: formData.name,
+      description: formData.description || undefined,
+      interface_code: formData.interface_code,
+      http_method: formData.http_method,
       expected_status_codes: [200],
       expiration_hours: 24,
     };
@@ -80,6 +254,12 @@ export default function ProjectDetailPage() {
     try {
       await createEndpointMutation.mutateAsync(data);
       setShowCreateEndpoint(false);
+      setFormData({
+        name: "",
+        description: "",
+        http_method: "GET",
+        interface_code: "",
+      });
     } catch (error) {
       console.error("Failed to create endpoint:", error);
     }
@@ -113,7 +293,6 @@ export default function ProjectDetailPage() {
     try {
       await navigator.clipboard.writeText(text);
     } catch (err) {
-      // Fallback for older browsers
       const textArea = document.createElement("textarea");
       textArea.value = text;
       document.body.appendChild(textArea);
@@ -123,291 +302,436 @@ export default function ProjectDetailPage() {
     }
   };
 
-  const endpoints = project.endpoints || [];
+  const endpoints = project.endpoints ?? [];
+  const activeEndpoints = endpoints.filter(
+    (e) => e.status === "active" && new Date(e.expires_at) > new Date(),
+  );
+  const expiredEndpoints = endpoints.filter(
+    (e) => e.status === "expired" || new Date(e.expires_at) <= new Date(),
+  );
+  const inactiveEndpoints = endpoints.filter((e) => e.status === "inactive");
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-900 to-slate-900 text-white">
+    <div className="from-background via-background to-muted/20 min-h-screen bg-gradient-to-br">
       <div className="container mx-auto px-4 py-8">
-        <div className="mx-auto max-w-6xl">
-          <div className="mb-8 flex items-center justify-between">
+        <div className="mx-auto max-w-7xl space-y-8">
+          {/* Header */}
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold">{project.name}</h1>
+              <h1 className="from-foreground to-muted-foreground bg-gradient-to-r bg-clip-text text-4xl font-bold tracking-tight text-transparent">
+                {project.name}
+              </h1>
               {project.description && (
-                <p className="mt-2 text-xl text-slate-300">
+                <p className="text-muted-foreground mt-3 text-lg">
                   {project.description}
                 </p>
               )}
             </div>
             <div className="flex gap-4">
-              <Button
-                onClick={() => setShowCreateEndpoint(true)}
-                className="bg-green-600 hover:bg-green-700"
+              <Dialog
+                open={showCreateEndpoint}
+                onOpenChange={setShowCreateEndpoint}
               >
-                + New API
-              </Button>
-              <Button
-                onClick={() => router.push("/projects")}
-                className="bg-gray-600 hover:bg-gray-700"
-              >
-                ← Back to Projects
-              </Button>
-            </div>
-          </div>
-
-          {/* Project Info */}
-          <div className="mb-8 rounded-xl border border-white/20 bg-white/10 p-6">
-            <h2 className="mb-4 text-2xl font-bold">Project Overview</h2>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-400">
-                  {endpoints.length}
-                </div>
-                <div className="text-sm text-slate-300">Total APIs</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-green-400">
-                  {
-                    endpoints.filter(
-                      (e) =>
-                        e.status === "active" &&
-                        new Date(e.expires_at) > new Date(),
-                    ).length
-                  }
-                </div>
-                <div className="text-sm text-slate-300">Active APIs</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-yellow-400">
-                  {
-                    endpoints.filter(
-                      (e) =>
-                        e.status === "expired" ||
-                        new Date(e.expires_at) <= new Date(),
-                    ).length
-                  }
-                </div>
-                <div className="text-sm text-slate-300">Expired APIs</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-gray-400">
-                  {endpoints.filter((e) => e.status === "inactive").length}
-                </div>
-                <div className="text-sm text-slate-300">Inactive APIs</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Endpoints List */}
-          <div className="mb-8 rounded-xl border border-white/20 bg-white/10 p-6">
-            <h2 className="mb-6 text-2xl font-bold">API Endpoints</h2>
-
-            {endpoints.length === 0 ? (
-              <div className="py-12 text-center">
-                <h3 className="mb-4 text-xl font-semibold">
-                  No API endpoints yet
-                </h3>
-                <p className="mb-6 text-slate-300">
-                  Create your first API endpoint to start generating mock data!
-                </p>
-                <Button
-                  onClick={() => setShowCreateEndpoint(true)}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  Create First API
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {endpoints.map((endpoint) => {
-                  const expiresIn = Math.ceil(
-                    (new Date(endpoint.expires_at).getTime() - Date.now()) /
-                      (1000 * 60 * 60),
-                  );
-                  const isExpired = expiresIn <= 0;
-                  const apiUrl = `${window.location.origin}/api/mock/${endpoint.endpoint_id}`;
-
-                  return (
-                    <div
-                      key={endpoint.id}
-                      className="rounded-lg border border-white/10 bg-white/5 p-6"
-                    >
-                      <div className="mb-4 flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="mb-2 flex items-center gap-3">
-                            <h3 className="text-lg font-semibold">
-                              {endpoint.name}
-                            </h3>
-                            <span
-                              className={`rounded px-2 py-1 text-xs ${
-                                isExpired ? "bg-red-600" : "bg-green-600"
-                              }`}
-                            >
-                              {isExpired ? "Expired" : "Active"}
-                            </span>
-                            <span className="rounded bg-blue-600 px-2 py-1 text-xs">
-                              {endpoint.http_method}
-                            </span>
-                          </div>
-                          {endpoint.description && (
-                            <p className="mb-2 text-sm text-slate-300">
-                              {endpoint.description}
-                            </p>
-                          )}
-                          <div className="text-sm text-slate-400">
-                            Expires:{" "}
-                            {isExpired ? "Expired" : `in ${expiresIn} hours`} |{" "}
-                            Created:{" "}
-                            {new Date(endpoint.created_at).toLocaleDateString()}
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            onClick={() =>
-                              handleGenerateMockData(endpoint.endpoint_id)
-                            }
-                            disabled={
-                              generateMockDataMutation.isPending || isExpired
-                            }
-                            className="bg-blue-600 px-3 py-2 text-sm hover:bg-blue-700"
-                          >
-                            Test API
-                          </Button>
-                          <Button
-                            onClick={() => handleDeleteEndpoint(endpoint.id)}
-                            disabled={deleteEndpointMutation.isPending}
-                            className="bg-red-600 px-3 py-2 text-sm hover:bg-red-700"
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="mb-4 flex gap-2">
-                        <code className="flex-1 rounded bg-black/30 p-3 font-mono text-sm break-all">
-                          {apiUrl}
-                        </code>
-                        <Button
-                          onClick={() => copyToClipboard(apiUrl)}
-                          className="bg-gray-600 px-3 hover:bg-gray-700"
-                        >
-                          Copy
-                        </Button>
-                      </div>
-
-                      <details className="mt-4">
-                        <summary className="cursor-pointer text-sm font-medium text-slate-300 hover:text-white">
-                          View Interface Code
-                        </summary>
-                        <pre className="mt-2 overflow-x-auto rounded bg-black/30 p-4 font-mono text-xs">
-                          <code>{endpoint.interface_code}</code>
-                        </pre>
-                      </details>
+                <DialogTrigger asChild>
+                  <Button
+                    className="from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 bg-gradient-to-r shadow-lg transition-all duration-300 hover:shadow-xl"
+                    size="lg"
+                  >
+                    <Plus className="mr-2 h-5 w-5" />
+                    New API
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Create New API Endpoint</DialogTitle>
+                    <DialogDescription>
+                      Add a new API endpoint to your project with TypeScript
+                      interface
+                    </DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleCreateEndpoint} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">API Name</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            name: e.target.value,
+                          }))
+                        }
+                        placeholder="e.g., User API"
+                        required
+                      />
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Mock Data Preview */}
-          {mockData && selectedEndpointId && (
-            <div className="mb-8 rounded-xl border border-white/20 bg-white/10 p-6">
-              <h2 className="mb-4 text-2xl font-bold">Generated Mock Data</h2>
-              <pre className="overflow-x-auto rounded bg-black/30 p-4 text-sm">
-                <code>{JSON.stringify(mockData, null, 2)}</code>
-              </pre>
-            </div>
-          )}
-
-          {/* Create Endpoint Form */}
-          {showCreateEndpoint && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-              <div className="w-full max-w-2xl rounded-xl bg-slate-800 p-6">
-                <h2 className="mb-6 text-2xl font-bold">
-                  Create New API Endpoint
-                </h2>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleCreateEndpoint(new FormData(e.currentTarget));
-                  }}
-                  className="space-y-4"
-                >
-                  <div>
-                    <label className="mb-2 block text-sm font-medium">
-                      API Name
-                    </label>
-                    <input
-                      name="name"
-                      required
-                      className="w-full rounded bg-slate-700 p-3 text-white"
-                      placeholder="e.g., User API"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-2 block text-sm font-medium">
-                      Description (optional)
-                    </label>
-                    <input
-                      name="description"
-                      className="w-full rounded bg-slate-700 p-3 text-white"
-                      placeholder="e.g., Manages user data and authentication"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-2 block text-sm font-medium">
-                      HTTP Method
-                    </label>
-                    <select
-                      name="http_method"
-                      className="w-full rounded bg-slate-700 p-3 text-white"
-                    >
-                      <option value="GET">GET</option>
-                      <option value="POST">POST</option>
-                      <option value="PUT">PUT</option>
-                      <option value="DELETE">DELETE</option>
-                      <option value="PATCH">PATCH</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="mb-2 block text-sm font-medium">
-                      TypeScript Interface
-                    </label>
-                    <textarea
-                      name="interface_code"
-                      required
-                      rows={8}
-                      className="w-full rounded bg-slate-700 p-3 font-mono text-sm text-white"
-                      placeholder={`interface User {
+                    <div className="space-y-2">
+                      <Label htmlFor="description">
+                        Description (optional)
+                      </Label>
+                      <Input
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            description: e.target.value,
+                          }))
+                        }
+                        placeholder="e.g., Manages user data and authentication"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="http_method">HTTP Method</Label>
+                      <Select
+                        value={formData.http_method}
+                        onValueChange={(value: any) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            http_method: value,
+                          }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="GET">GET</SelectItem>
+                          <SelectItem value="POST">POST</SelectItem>
+                          <SelectItem value="PUT">PUT</SelectItem>
+                          <SelectItem value="DELETE">DELETE</SelectItem>
+                          <SelectItem value="PATCH">PATCH</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="interface_code">
+                        TypeScript Interface
+                      </Label>
+                      <Textarea
+                        id="interface_code"
+                        value={formData.interface_code}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            interface_code: e.target.value,
+                          }))
+                        }
+                        placeholder={`interface User {
   id: number;
   name: string;
   email: string;
   createdAt: Date;
 }`}
-                    />
+                        rows={8}
+                        className="font-mono text-sm"
+                        required
+                      />
+                    </div>
+                    <div className="flex gap-4">
+                      <Button
+                        type="submit"
+                        disabled={createEndpointMutation.isPending}
+                        className="from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 bg-gradient-to-r"
+                      >
+                        {createEndpointMutation.isPending ? (
+                          <>
+                            <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                            Creating...
+                          </>
+                        ) : (
+                          "Create API"
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setShowCreateEndpoint(false)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+              <Button
+                variant="outline"
+                onClick={() => router.push("/projects")}
+                size="lg"
+                className="shadow-lg transition-all duration-300 hover:shadow-xl"
+              >
+                <ArrowLeft className="mr-2 h-5 w-5" />
+                Back to Projects
+              </Button>
+            </div>
+          </div>
+
+          {/* Project Info Section */}
+          <div className="from-primary/10 via-primary/5 to-background border-primary/20 relative overflow-hidden rounded-2xl border bg-gradient-to-r p-8">
+            <div className="from-primary/10 absolute top-0 right-0 h-32 w-32 translate-x-16 -translate-y-16 rounded-full bg-gradient-to-br to-transparent"></div>
+            <div className="from-primary/5 absolute bottom-0 left-0 h-24 w-24 -translate-x-12 translate-y-12 rounded-full bg-gradient-to-tr to-transparent"></div>
+            <div className="relative z-10">
+              <div className="mb-6 flex items-center gap-3">
+                <Cpu className="text-primary h-6 w-6" />
+                <h2 className="text-xl font-semibold">Project Workspace</h2>
+              </div>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <div className="bg-background/50 border-primary/10 flex items-center gap-3 rounded-xl border p-4">
+                  <Globe className="text-primary h-5 w-5" />
+                  <div>
+                    <p className="text-sm font-medium">Project ID</p>
+                    <p className="text-muted-foreground font-mono text-xs">
+                      {project.id}
+                    </p>
                   </div>
-                  <div className="flex gap-4">
-                    <Button
-                      type="submit"
-                      disabled={createEndpointMutation.isPending}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      {createEndpointMutation.isPending
-                        ? "Creating..."
-                        : "Create API"}
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={() => setShowCreateEndpoint(false)}
-                      className="bg-gray-600 hover:bg-gray-700"
-                    >
-                      Cancel
-                    </Button>
+                </div>
+                <div className="bg-background/50 border-primary/10 flex items-center gap-3 rounded-xl border p-4">
+                  <Clock className="text-primary h-5 w-5" />
+                  <div>
+                    <p className="text-sm font-medium">Created</p>
+                    <p className="text-muted-foreground text-xs">
+                      {new Date(project.created_at!).toLocaleDateString()}
+                    </p>
                   </div>
-                </form>
+                </div>
+                <div className="bg-background/50 border-primary/10 flex items-center gap-3 rounded-xl border p-4">
+                  <Activity className="text-primary h-5 w-5" />
+                  <div>
+                    <p className="text-sm font-medium">Status</p>
+                    <p className="text-muted-foreground text-xs">Active</p>
+                  </div>
+                </div>
               </div>
             </div>
-          )}
+          </div>
+
+          {/* Project Stats */}
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              title="Total APIs"
+              value={endpoints.length}
+              icon={Database}
+              description="All endpoints"
+            />
+            <StatCard
+              title="Active APIs"
+              value={activeEndpoints.length}
+              icon={CheckCircle}
+              variant="success"
+              description="Currently running"
+            />
+            <StatCard
+              title="Expired APIs"
+              value={expiredEndpoints.length}
+              icon={Clock}
+              variant="warning"
+              description="Past expiration"
+            />
+            <StatCard
+              title="Inactive APIs"
+              value={inactiveEndpoints.length}
+              icon={AlertTriangle}
+              variant="destructive"
+              description="Disabled endpoints"
+            />
+          </div>
+
+          {/* Endpoints List */}
+          <Card className="from-background to-muted/30 border-0 bg-gradient-to-br shadow-lg">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-3 text-2xl">
+                    <Layers className="text-primary h-6 w-6" />
+                    API Endpoints
+                  </CardTitle>
+                  <CardDescription className="mt-2 text-base">
+                    Manage your mock API endpoints and test data generation
+                  </CardDescription>
+                </div>
+                <div className="text-muted-foreground flex items-center gap-2 text-sm">
+                  <Terminal className="h-4 w-4" />
+                  {endpoints.length} endpoint{endpoints.length !== 1 ? "s" : ""}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {endpoints.length === 0 ? (
+                <div className="py-16 text-center">
+                  <div className="bg-primary/10 mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full">
+                    <Sparkles className="text-primary h-10 w-10" />
+                  </div>
+                  <h3 className="mb-3 text-xl font-semibold">
+                    Ready to Create Your First API?
+                  </h3>
+                  <p className="text-muted-foreground mx-auto mb-8 max-w-md text-lg">
+                    Start building mock APIs with TypeScript interfaces and
+                    generate realistic test data instantly.
+                  </p>
+                  <Button
+                    onClick={() => setShowCreateEndpoint(true)}
+                    className="from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 bg-gradient-to-r shadow-lg transition-all duration-300 hover:shadow-xl"
+                    size="lg"
+                  >
+                    <Plus className="mr-2 h-5 w-5" />
+                    Create First API
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {endpoints.map((endpoint) => {
+                    const expiresIn = Math.ceil(
+                      (new Date(endpoint.expires_at).getTime() - Date.now()) /
+                        (1000 * 60 * 60),
+                    );
+                    const isExpired = expiresIn <= 0;
+                    const apiUrl = `${window.location.origin}/api/mock/${endpoint.endpoint_id}`;
+
+                    return (
+                      <Card
+                        key={endpoint.id}
+                        className="from-background to-muted/30 group border-0 bg-gradient-to-br shadow-lg transition-all duration-300 hover:shadow-xl"
+                      >
+                        <CardContent className="p-6">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 space-y-4">
+                              <div className="flex items-center gap-3">
+                                <h3 className="group-hover:text-primary text-lg font-semibold transition-colors">
+                                  {endpoint.name}
+                                </h3>
+                                <Badge
+                                  variant={
+                                    isExpired ? "destructive" : "default"
+                                  }
+                                  className="transition-transform group-hover:scale-105"
+                                >
+                                  {isExpired ? "Expired" : "Active"}
+                                </Badge>
+                                <Badge variant="outline" className="font-mono">
+                                  {endpoint.http_method}
+                                </Badge>
+                              </div>
+
+                              {endpoint.description && (
+                                <p className="text-muted-foreground text-sm">
+                                  {endpoint.description}
+                                </p>
+                              )}
+
+                              <div className="text-muted-foreground flex items-center gap-6 text-xs">
+                                <div className="flex items-center gap-2">
+                                  <Clock className="h-3 w-3" />
+                                  {isExpired
+                                    ? "Expired"
+                                    : `Expires in ${expiresIn}h`}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Settings className="h-3 w-3" />
+                                  {new Date(
+                                    endpoint.created_at,
+                                  ).toLocaleDateString()}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <code className="bg-muted/50 border-muted/30 flex-1 rounded-lg border px-4 py-3 font-mono text-sm">
+                                  {apiUrl}
+                                </code>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => copyToClipboard(apiUrl)}
+                                  className="hover:bg-primary/10 hover:text-primary transition-colors"
+                                >
+                                  <Copy className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+
+                            <div className="ml-6 flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleGenerateMockData(endpoint.endpoint_id)
+                                }
+                                disabled={
+                                  generateMockDataMutation.isPending ||
+                                  isExpired
+                                }
+                                className="transition-colors hover:border-green-500/30 hover:bg-green-500/10 hover:text-green-600"
+                              >
+                                <Play className="mr-2 h-4 w-4" />
+                                Test
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleDeleteEndpoint(endpoint.id)
+                                }
+                                disabled={deleteEndpointMutation.isPending}
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+
+                          <Tabs defaultValue="interface" className="mt-6">
+                            <TabsList className="bg-muted/50 grid w-full grid-cols-2">
+                              <TabsTrigger
+                                value="interface"
+                                className="data-[state=active]:bg-background"
+                              >
+                                <Code className="mr-2 h-4 w-4" />
+                                Interface
+                              </TabsTrigger>
+                              <TabsTrigger
+                                value="mock-data"
+                                className="data-[state=active]:bg-background"
+                              >
+                                <Database className="mr-2 h-4 w-4" />
+                                Mock Data
+                              </TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="interface" className="mt-4">
+                              <ScrollArea className="bg-muted/30 border-muted/30 h-40 rounded-lg border p-4">
+                                <pre className="font-mono text-xs">
+                                  <code>{endpoint.interface_code}</code>
+                                </pre>
+                              </ScrollArea>
+                            </TabsContent>
+                            <TabsContent value="mock-data" className="mt-4">
+                              {selectedEndpointId === endpoint.endpoint_id &&
+                              mockData ? (
+                                <ScrollArea className="bg-muted/30 border-muted/30 h-40 rounded-lg border p-4">
+                                  <pre className="font-mono text-xs">
+                                    <code>
+                                      {JSON.stringify(mockData, null, 2)}
+                                    </code>
+                                  </pre>
+                                </ScrollArea>
+                              ) : (
+                                <div className="bg-muted/30 border-muted/30 flex h-40 items-center justify-center rounded-lg border">
+                                  <div className="text-center">
+                                    <Database className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
+                                    <p className="text-muted-foreground text-sm">
+                                      Click "Test" to generate mock data
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
+                            </TabsContent>
+                          </Tabs>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
