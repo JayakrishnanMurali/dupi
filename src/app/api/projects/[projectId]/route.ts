@@ -1,20 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createDupiInstance } from '@/lib/dupi';
-
-const dupiInstance = createDupiInstance();
+import { createClient } from '@/lib/supabase/server';
+import { SupabaseProjectService } from '@/lib/supabase/project-service';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { projectId: string } }
 ) {
   try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     const { projectId } = params;
-    const project = dupiInstance.getProject(projectId);
+    const projectService = new SupabaseProjectService();
+    const project = await projectService.getProject(projectId);
 
     if (!project) {
       return NextResponse.json(
         { success: false, error: 'Project not found or expired' },
         { status: 404 }
+      );
+    }
+
+    // Ensure user owns the project
+    if (project.user_id !== user.id) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 403 }
       );
     }
 
@@ -40,8 +58,19 @@ export async function DELETE(
   { params }: { params: { projectId: string } }
 ) {
   try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     const { projectId } = params;
-    const success = dupiInstance.deactivateProject(projectId);
+    const projectService = new SupabaseProjectService();
+    const success = await projectService.deleteProject(projectId, user.id);
 
     if (!success) {
       return NextResponse.json(

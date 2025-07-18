@@ -1,21 +1,31 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { createDupiInstance } from "@/lib/dupi";
-import type { CreateProjectRequest } from "@/lib/dupi/types";
-
-const dupiInstance = createDupiInstance();
+import { createClient } from "@/lib/supabase/server";
+import { SupabaseProjectService } from "@/lib/supabase/project-service";
+import type { CreateProjectRequest } from "@/lib/supabase/types";
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
     const body = (await request.json()) as CreateProjectRequest;
 
-    if (!body.name || !body.interfaceCode) {
+    if (!body.name || !body.interface_code) {
       return NextResponse.json(
         { success: false, error: "Name and interface code are required" },
         { status: 400 },
       );
     }
 
-    const project = dupiInstance.createProject(body);
+    const projectService = new SupabaseProjectService();
+    const project = await projectService.createProject(user.id, body);
 
     return NextResponse.json({
       success: true,
@@ -36,8 +46,19 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    const projects = dupiInstance.listActiveProjects();
-    const stats = dupiInstance.getProjectStats();
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    const projectService = new SupabaseProjectService();
+    const projects = await projectService.getUserProjects(user.id);
+    const stats = await projectService.getProjectStats(user.id);
 
     return NextResponse.json({
       success: true,

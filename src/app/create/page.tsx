@@ -3,44 +3,29 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { useCreateProject } from '@/lib/hooks/use-projects';
+import type { CreateProjectParams } from '@/lib/api/types';
 
 export default function CreateProjectPage() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
+  const createProjectMutation = useCreateProject();
+  
+  const [formData, setFormData] = useState<CreateProjectParams>({
     name: '',
     description: '',
-    interfaceCode: '',
-    method: 'GET' as const,
-    expirationHours: 24,
+    interface_code: '',
+    http_method: 'GET',
+    expiration_hours: 24,
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-
+    
     try {
-      const response = await fetch('/api/projects', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create project');
-      }
-
-      const result = await response.json();
-      router.push(`/projects/${result.data.id}`);
+      const project = await createProjectMutation.mutateAsync(formData);
+      router.push(`/projects/${project.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
-    } finally {
-      setIsLoading(false);
+      console.error('Failed to create project:', err);
     }
   };
 
@@ -102,8 +87,8 @@ export default function CreateProjectPage() {
                 </label>
                 <select
                   id="method"
-                  value={formData.method}
-                  onChange={(e) => setFormData({ ...formData, method: e.target.value as any })}
+                  value={formData.http_method}
+                  onChange={(e) => setFormData({ ...formData, http_method: e.target.value as CreateProjectParams['http_method'] })}
                   className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="GET">GET</option>
@@ -121,8 +106,8 @@ export default function CreateProjectPage() {
                 <input
                   type="number"
                   id="expiration"
-                  value={formData.expirationHours}
-                  onChange={(e) => setFormData({ ...formData, expirationHours: parseInt(e.target.value) })}
+                  value={formData.expiration_hours}
+                  onChange={(e) => setFormData({ ...formData, expiration_hours: parseInt(e.target.value) })}
                   className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   min="1"
                   max="720"
@@ -137,14 +122,14 @@ export default function CreateProjectPage() {
               <div className="flex gap-4 mb-2">
                 <Button
                   type="button"
-                  onClick={() => setFormData({ ...formData, interfaceCode: exampleInterface })}
+                  onClick={() => setFormData({ ...formData, interface_code: exampleInterface })}
                   className="bg-blue-600 hover:bg-blue-700"
                 >
                   Use Example
                 </Button>
                 <Button
                   type="button"
-                  onClick={() => setFormData({ ...formData, interfaceCode: '' })}
+                  onClick={() => setFormData({ ...formData, interface_code: '' })}
                   className="bg-gray-600 hover:bg-gray-700"
                 >
                   Clear
@@ -152,8 +137,8 @@ export default function CreateProjectPage() {
               </div>
               <textarea
                 id="interface"
-                value={formData.interfaceCode}
-                onChange={(e) => setFormData({ ...formData, interfaceCode: e.target.value })}
+                value={formData.interface_code}
+                onChange={(e) => setFormData({ ...formData, interface_code: e.target.value })}
                 className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
                 placeholder="Paste your TypeScript interface here..."
                 rows={12}
@@ -161,19 +146,19 @@ export default function CreateProjectPage() {
               />
             </div>
 
-            {error && (
+            {createProjectMutation.error && (
               <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4">
-                <p className="text-red-300">{error}</p>
+                <p className="text-red-300">{createProjectMutation.error.message}</p>
               </div>
             )}
 
             <div className="flex gap-4">
               <Button
                 type="submit"
-                disabled={isLoading}
+                disabled={createProjectMutation.isPending}
                 className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
               >
-                {isLoading ? 'Creating...' : 'Create Project'}
+                {createProjectMutation.isPending ? 'Creating...' : 'Create Project'}
               </Button>
               <Button
                 type="button"
