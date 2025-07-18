@@ -1,15 +1,21 @@
-import { createClient } from '@/lib/supabase/client';
 import type {
   ApiResponse,
-  ProjectListResponse,
   CreateProjectParams,
   UpdateProjectParams,
   DeleteProjectParams,
+  CreateEndpointParams,
+  UpdateEndpointParams,
+  DeleteEndpointParams,
   GenerateMockDataParams,
   MockDataResponse,
 } from './types';
 import { ApiError } from './types';
-import type { Project } from '@/lib/supabase/types';
+import type { 
+  Project, 
+  Endpoint, 
+  ProjectListResponse, 
+  ProjectWithEndpoints 
+} from '@/lib/supabase/types';
 
 class ApiClient {
   private async request<T>(
@@ -32,7 +38,7 @@ class ApiClient {
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Unknown error' }));
       throw new ApiError(
-        error.error || `HTTP ${response.status}`,
+        error.error ?? `HTTP ${response.status}`,
         response.status,
         error
       );
@@ -50,10 +56,10 @@ class ApiClient {
     return response.data;
   }
 
-  async getProject(projectId: string): Promise<Project> {
-    const response = await this.request<ApiResponse<Project>>(`/api/projects/${projectId}`);
+  async getProject(projectId: string): Promise<ProjectWithEndpoints> {
+    const response = await this.request<ApiResponse<ProjectWithEndpoints>>(`/api/projects/${projectId}`);
     if (!response.success || !response.data) {
-      throw new ApiError('Failed to fetch project', 404);
+      throw new ApiError('Failed to fetch project', 500);
     }
     return response.data;
   }
@@ -64,51 +70,96 @@ class ApiClient {
       body: JSON.stringify(params),
     });
     if (!response.success || !response.data) {
-      throw new ApiError('Failed to create project', 400);
+      throw new ApiError('Failed to create project', 500);
     }
     return response.data;
   }
 
-  async updateProject({ projectId, updates }: UpdateProjectParams): Promise<Project> {
-    const response = await this.request<ApiResponse<Project>>(`/api/projects/${projectId}`, {
+  async updateProject(params: UpdateProjectParams): Promise<Project> {
+    const response = await this.request<ApiResponse<Project>>(`/api/projects/${params.projectId}`, {
       method: 'PUT',
-      body: JSON.stringify(updates),
+      body: JSON.stringify(params.updates),
     });
     if (!response.success || !response.data) {
-      throw new ApiError('Failed to update project', 400);
+      throw new ApiError('Failed to update project', 500);
     }
     return response.data;
   }
 
-  async deleteProject({ projectId }: DeleteProjectParams): Promise<void> {
-    const response = await this.request<ApiResponse<{ message: string }>>(`/api/projects/${projectId}`, {
+  async deleteProject(params: DeleteProjectParams): Promise<void> {
+    const response = await this.request<ApiResponse<{ message: string }>>(`/api/projects/${params.projectId}`, {
       method: 'DELETE',
     });
     if (!response.success) {
-      throw new ApiError('Failed to delete project', 400);
+      throw new ApiError('Failed to delete project', 500);
+    }
+  }
+
+  // Endpoints API
+  async getProjectEndpoints(projectId: string): Promise<Endpoint[]> {
+    const response = await this.request<ApiResponse<Endpoint[]>>(`/api/projects/${projectId}/endpoints`);
+    if (!response.success || !response.data) {
+      throw new ApiError('Failed to fetch project endpoints', 500);
+    }
+    return response.data;
+  }
+
+  async getEndpoint(endpointId: string): Promise<Endpoint> {
+    const response = await this.request<ApiResponse<Endpoint>>(`/api/endpoints/${endpointId}`);
+    if (!response.success || !response.data) {
+      throw new ApiError('Failed to fetch endpoint', 500);
+    }
+    return response.data;
+  }
+
+  async createEndpoint(params: CreateEndpointParams): Promise<Endpoint> {
+    const response = await this.request<ApiResponse<Endpoint>>(`/api/projects/${params.project_id}/endpoints`, {
+      method: 'POST',
+      body: JSON.stringify(params),
+    });
+    if (!response.success || !response.data) {
+      throw new ApiError('Failed to create endpoint', 500);
+    }
+    return response.data;
+  }
+
+  async updateEndpoint(params: UpdateEndpointParams): Promise<Endpoint> {
+    const response = await this.request<ApiResponse<Endpoint>>(`/api/endpoints/${params.endpointId}`, {
+      method: 'PUT',
+      body: JSON.stringify(params.updates),
+    });
+    if (!response.success || !response.data) {
+      throw new ApiError('Failed to update endpoint', 500);
+    }
+    return response.data;
+  }
+
+  async deleteEndpoint(params: DeleteEndpointParams): Promise<void> {
+    const response = await this.request<ApiResponse<{ message: string }>>(`/api/endpoints/${params.endpointId}`, {
+      method: 'DELETE',
+    });
+    if (!response.success) {
+      throw new ApiError('Failed to delete endpoint', 500);
     }
   }
 
   // Mock Data API
-  async generateMockData({ endpointId, count }: GenerateMockDataParams): Promise<unknown> {
-    const url = count 
-      ? `/api/mock/${endpointId}?count=${count}`
-      : `/api/mock/${endpointId}`;
-    
+  async generateMockData(params: GenerateMockDataParams): Promise<unknown> {
+    const url = `/api/mock/${params.endpointId}${params.count ? `?count=${params.count}` : ''}`;
     const response = await this.request<MockDataResponse>(url);
     if (!response.success) {
-      throw new ApiError('Failed to generate mock data', 400);
+      throw new ApiError('Failed to generate mock data', 500);
     }
     return response.data;
   }
 
-  async generateMockDataPost({ endpointId, count }: GenerateMockDataParams): Promise<unknown> {
-    const response = await this.request<MockDataResponse>(`/api/mock/${endpointId}`, {
+  async generateMockDataPost(params: GenerateMockDataParams): Promise<unknown> {
+    const response = await this.request<MockDataResponse>(`/api/mock/${params.endpointId}`, {
       method: 'POST',
-      body: JSON.stringify({ count }),
+      body: JSON.stringify({ count: params.count }),
     });
     if (!response.success) {
-      throw new ApiError('Failed to generate mock data', 400);
+      throw new ApiError('Failed to generate mock data', 500);
     }
     return response.data;
   }

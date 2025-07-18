@@ -1,9 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { SupabaseProjectService } from "@/lib/supabase/project-service";
-import type { CreateProjectRequest, ProjectListResponse } from "@/lib/supabase/types";
+import type { CreateEndpointRequest } from "@/lib/supabase/types";
 
-export async function POST(request: NextRequest) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { projectId: string } }
+) {
   try {
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -15,21 +18,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = (await request.json()) as CreateProjectRequest;
+    const { projectId } = params;
+    const body = (await request.json()) as CreateEndpointRequest;
+    
+    // Remove project_id from body if present since we get it from URL
+    delete body.project_id;
 
-    if (!body.name) {
+    if (!body.name || !body.interface_code) {
       return NextResponse.json(
-        { success: false, error: "Project name is required" },
-        { status: 400 },
+        { success: false, error: "Endpoint name and interface code are required" },
+        { status: 400 }
       );
     }
 
+    const endpointRequest: CreateEndpointRequest = {
+      ...body,
+      project_id: projectId,
+    };
+
     const projectService = new SupabaseProjectService();
-    const project = await projectService.createProject(user.id, body);
+    const endpoint = await projectService.createEndpoint(user.id, endpointRequest);
 
     return NextResponse.json({
       success: true,
-      data: project,
+      data: endpoint,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
@@ -39,12 +51,15 @@ export async function POST(request: NextRequest) {
         error: error instanceof Error ? error.message : "Unknown error",
         timestamp: new Date().toISOString(),
       },
-      { status: 400 },
+      { status: 400 }
     );
   }
 }
 
-export async function GET() {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { projectId: string } }
+) {
   try {
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -56,18 +71,23 @@ export async function GET() {
       );
     }
 
+    const { projectId } = params;
     const projectService = new SupabaseProjectService();
-    const projects = await projectService.getUserProjects(user.id);
-    const stats = await projectService.getProjectStats(user.id);
+    
+    // Verify user owns the project
+    const project = await projectService.getProject(projectId);
+    if (!project) {
+      return NextResponse.json(
+        { success: false, error: "Project not found" },
+        { status: 404 }
+      );
+    }
 
-    const response: ProjectListResponse = {
-      projects,
-      stats,
-    };
+    const endpoints = await projectService.getProjectEndpoints(projectId);
 
     return NextResponse.json({
       success: true,
-      data: response,
+      data: endpoints,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
@@ -77,7 +97,7 @@ export async function GET() {
         error: error instanceof Error ? error.message : "Unknown error",
         timestamp: new Date().toISOString(),
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

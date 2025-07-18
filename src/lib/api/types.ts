@@ -1,4 +1,13 @@
-import type { Project, CreateProjectRequest, UpdateProjectRequest } from '@/lib/supabase/types';
+import type { 
+  Project, 
+  Endpoint,
+  CreateProjectRequest, 
+  UpdateProjectRequest,
+  CreateEndpointRequest,
+  UpdateEndpointRequest,
+  ProjectListResponse,
+  DashboardStats
+} from '@/lib/supabase/types';
 
 // API Response types
 export interface ApiResponse<T = unknown> {
@@ -8,35 +17,22 @@ export interface ApiResponse<T = unknown> {
   timestamp: string;
 }
 
-export interface ProjectListResponse {
-  projects: Project[];
-  stats: {
-    total: number;
-    active: number;
-    expired: number;
-    inactive: number;
-  };
-}
-
 export interface MockDataResponse {
   success: boolean;
   data: unknown;
   timestamp: string;
   metadata?: {
+    endpoint_id: string;
     project_id: string;
     generated_count: number;
     interface_name?: string;
   };
 }
 
-// Request types
+// Request types for projects
 export interface CreateProjectParams {
   name: string;
   description?: string;
-  interface_code: string;
-  http_method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
-  expected_status_codes?: number[];
-  expiration_hours?: number;
 }
 
 export interface UpdateProjectParams {
@@ -46,6 +42,27 @@ export interface UpdateProjectParams {
 
 export interface DeleteProjectParams {
   projectId: string;
+}
+
+// Request types for endpoints
+export interface CreateEndpointParams {
+  project_id: string;
+  name: string;
+  description?: string;
+  interface_code: string;
+  http_method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+  expected_status_codes?: number[];
+  expiration_hours?: number;
+}
+
+export interface UpdateEndpointParams {
+  endpointId: string;
+  updates: UpdateEndpointRequest;
+}
+
+export interface DeleteEndpointParams {
+  endpointId: string;
+  project_id?: string; // Optional for cache invalidation
 }
 
 export interface GenerateMockDataParams {
@@ -73,6 +90,13 @@ export const queryKeys = {
     list: (filters?: Record<string, unknown>) => [...queryKeys.projects.lists(), filters] as const,
     details: () => [...queryKeys.projects.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.projects.details(), id] as const,
+  },
+  endpoints: {
+    all: ['endpoints'] as const,
+    lists: () => [...queryKeys.endpoints.all, 'list'] as const,
+    byProject: (projectId: string) => [...queryKeys.endpoints.lists(), 'project', projectId] as const,
+    details: () => [...queryKeys.endpoints.all, 'detail'] as const,
+    detail: (id: string) => [...queryKeys.endpoints.details(), id] as const,
   },
   mockData: {
     all: ['mockData'] as const,

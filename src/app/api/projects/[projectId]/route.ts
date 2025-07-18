@@ -19,7 +19,7 @@ export async function GET(
 
     const { projectId } = params;
     const projectService = new SupabaseProjectService();
-    const project = await projectService.getProject(projectId);
+    const project = await projectService.getProjectWithEndpoints(projectId);
 
     if (!project) {
       return NextResponse.json(

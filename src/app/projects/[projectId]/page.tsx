@@ -4,8 +4,13 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useProject } from "@/lib/hooks/use-projects";
+import {
+  useCreateEndpoint,
+  useDeleteEndpoint,
+} from "@/lib/hooks/use-endpoints";
 import { useGenerateMockData } from "@/lib/hooks/use-mock-data";
 import { useAuth } from "@/lib/auth/context";
+import type { CreateEndpointParams } from "@/lib/api/types";
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -14,38 +19,17 @@ export default function ProjectDetailPage() {
 
   const { user, loading: authLoading } = useAuth();
   const { data: project, isLoading, error } = useProject(projectId);
+  const createEndpointMutation = useCreateEndpoint();
+  const deleteEndpointMutation = useDeleteEndpoint();
   const generateMockDataMutation = useGenerateMockData();
+
+  const [showCreateEndpoint, setShowCreateEndpoint] = useState(false);
   const [mockData, setMockData] = useState<
     Record<string, unknown> | unknown[] | null
   >(null);
-
-  const handleGenerateMockData = async (count?: number) => {
-    if (!project) return;
-
-    try {
-      const data = await generateMockDataMutation.mutateAsync({
-        endpointId: project.endpoint_id,
-        count,
-      });
-      setMockData(data as Record<string, unknown> | unknown[] | null);
-    } catch (error) {
-      console.error("Failed to generate mock data:", error);
-    }
-  };
-
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch (err) {
-      // Fallback for older browsers
-      const textArea = document.createElement("textarea");
-      textArea.value = text;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textArea);
-    }
-  };
+  const [selectedEndpointId, setSelectedEndpointId] = useState<string | null>(
+    null,
+  );
 
   // Show auth loading state only if we don't have data yet
   if (authLoading && !project) {
@@ -82,118 +66,252 @@ export default function ProjectDetailPage() {
     );
   }
 
-  const apiUrl = `${window.location.origin}/api/mock/${project.endpoint_id}`;
-  const expiresIn = Math.ceil(
-    (new Date(project.expires_at).getTime() - Date.now()) / (1000 * 60 * 60),
-  );
+  const handleCreateEndpoint = async (formData: FormData) => {
+    const data: CreateEndpointParams = {
+      project_id: projectId,
+      name: formData.get("name") as string,
+      description: (formData.get("description") as string) || undefined,
+      interface_code: formData.get("interface_code") as string,
+      http_method: (formData.get("http_method") as any) || "GET",
+      expected_status_codes: [200],
+      expiration_hours: 24,
+    };
+
+    try {
+      await createEndpointMutation.mutateAsync(data);
+      setShowCreateEndpoint(false);
+    } catch (error) {
+      console.error("Failed to create endpoint:", error);
+    }
+  };
+
+  const handleDeleteEndpoint = async (endpointId: string) => {
+    try {
+      await deleteEndpointMutation.mutateAsync({
+        endpointId,
+        project_id: projectId,
+      });
+    } catch (error) {
+      console.error("Failed to delete endpoint:", error);
+    }
+  };
+
+  const handleGenerateMockData = async (endpointId: string, count?: number) => {
+    try {
+      const data = await generateMockDataMutation.mutateAsync({
+        endpointId,
+        count,
+      });
+      setMockData(data as Record<string, unknown> | unknown[] | null);
+      setSelectedEndpointId(endpointId);
+    } catch (error) {
+      console.error("Failed to generate mock data:", error);
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+    }
+  };
+
+  const endpoints = project.endpoints || [];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 to-slate-900 text-white">
       <div className="container mx-auto px-4 py-8">
         <div className="mx-auto max-w-6xl">
           <div className="mb-8 flex items-center justify-between">
-            <h1 className="text-4xl font-bold">{project.name}</h1>
-            <Button
-              onClick={() => router.push("/projects")}
-              className="bg-gray-600 hover:bg-gray-700"
-            >
-              ← Back to Projects
-            </Button>
+            <div>
+              <h1 className="text-4xl font-bold">{project.name}</h1>
+              {project.description && (
+                <p className="mt-2 text-xl text-slate-300">
+                  {project.description}
+                </p>
+              )}
+            </div>
+            <div className="flex gap-4">
+              <Button
+                onClick={() => setShowCreateEndpoint(true)}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                + New API
+              </Button>
+              <Button
+                onClick={() => router.push("/projects")}
+                className="bg-gray-600 hover:bg-gray-700"
+              >
+                ← Back to Projects
+              </Button>
+            </div>
           </div>
 
-          {project.description && (
-            <p className="mb-8 text-xl text-slate-300">{project.description}</p>
-          )}
-
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-            {/* Project Info */}
-            <div className="rounded-xl border border-white/20 bg-white/10 p-6">
-              <h2 className="mb-4 text-2xl font-bold">Project Details</h2>
-              <div className="space-y-3">
-                <div>
-                  <span className="font-semibold">Method:</span>
-                  <span className="ml-2 rounded bg-blue-600 px-2 py-1 text-sm">
-                    {project.http_method}
-                  </span>
+          {/* Project Info */}
+          <div className="mb-8 rounded-xl border border-white/20 bg-white/10 p-6">
+            <h2 className="mb-4 text-2xl font-bold">Project Overview</h2>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-blue-400">
+                  {endpoints.length}
                 </div>
-                <div>
-                  <span className="font-semibold">Status Codes:</span>
-                  <span className="ml-2">
-                    {project.expected_status_codes?.join(", ") ?? "N/A"}
-                  </span>
+                <div className="text-sm text-slate-300">Total APIs</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-green-400">
+                  {
+                    endpoints.filter(
+                      (e) =>
+                        e.status === "active" &&
+                        new Date(e.expires_at) > new Date(),
+                    ).length
+                  }
                 </div>
-                <div>
-                  <span className="font-semibold">Expires:</span>
-                  <span className="ml-2 text-yellow-300">
-                    in {expiresIn > 0 ? `${expiresIn} hours` : "Expired"}
-                  </span>
+                <div className="text-sm text-slate-300">Active APIs</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-yellow-400">
+                  {
+                    endpoints.filter(
+                      (e) =>
+                        e.status === "expired" ||
+                        new Date(e.expires_at) <= new Date(),
+                    ).length
+                  }
                 </div>
-                <div>
-                  <span className="font-semibold">Created:</span>
-                  <span className="ml-2">
-                    {new Date(project.created_at!).toLocaleString()}
-                  </span>
+                <div className="text-sm text-slate-300">Expired APIs</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-gray-400">
+                  {endpoints.filter((e) => e.status === "inactive").length}
                 </div>
+                <div className="text-sm text-slate-300">Inactive APIs</div>
               </div>
             </div>
+          </div>
 
-            {/* API Endpoint */}
-            <div className="rounded-xl border border-white/20 bg-white/10 p-6">
-              <h2 className="mb-4 text-2xl font-bold">API Endpoint</h2>
+          {/* Endpoints List */}
+          <div className="mb-8 rounded-xl border border-white/20 bg-white/10 p-6">
+            <h2 className="mb-6 text-2xl font-bold">API Endpoints</h2>
+
+            {endpoints.length === 0 ? (
+              <div className="py-12 text-center">
+                <h3 className="mb-4 text-xl font-semibold">
+                  No API endpoints yet
+                </h3>
+                <p className="mb-6 text-slate-300">
+                  Create your first API endpoint to start generating mock data!
+                </p>
+                <Button
+                  onClick={() => setShowCreateEndpoint(true)}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  Create First API
+                </Button>
+              </div>
+            ) : (
               <div className="space-y-4">
-                <div>
-                  <label className="mb-2 block text-sm font-medium">
-                    Mock API URL:
-                  </label>
-                  <div className="flex gap-2">
-                    <code className="flex-1 rounded bg-black/30 p-3 font-mono text-sm break-all">
-                      {apiUrl}
-                    </code>
-                    <Button
-                      onClick={() => copyToClipboard(apiUrl)}
-                      className="bg-green-600 px-3 hover:bg-green-700"
-                    >
-                      Copy
-                    </Button>
-                  </div>
-                </div>
+                {endpoints.map((endpoint) => {
+                  const expiresIn = Math.ceil(
+                    (new Date(endpoint.expires_at).getTime() - Date.now()) /
+                      (1000 * 60 * 60),
+                  );
+                  const isExpired = expiresIn <= 0;
+                  const apiUrl = `${window.location.origin}/api/mock/${endpoint.endpoint_id}`;
 
-                <div className="space-y-2">
-                  <h3 className="font-semibold">Test API:</h3>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleGenerateMockData()}
-                      disabled={generateMockDataMutation.isPending}
-                      className="bg-blue-600 hover:bg-blue-700"
+                  return (
+                    <div
+                      key={endpoint.id}
+                      className="rounded-lg border border-white/10 bg-white/5 p-6"
                     >
-                      {generateMockDataMutation.isPending
-                        ? "Generating..."
-                        : "Generate Single"}
-                    </Button>
-                    <Button
-                      onClick={() => handleGenerateMockData(5)}
-                      disabled={generateMockDataMutation.isPending}
-                      className="bg-purple-600 hover:bg-purple-700"
-                    >
-                      Generate Array (5)
-                    </Button>
-                  </div>
-                </div>
+                      <div className="mb-4 flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="mb-2 flex items-center gap-3">
+                            <h3 className="text-lg font-semibold">
+                              {endpoint.name}
+                            </h3>
+                            <span
+                              className={`rounded px-2 py-1 text-xs ${
+                                isExpired ? "bg-red-600" : "bg-green-600"
+                              }`}
+                            >
+                              {isExpired ? "Expired" : "Active"}
+                            </span>
+                            <span className="rounded bg-blue-600 px-2 py-1 text-xs">
+                              {endpoint.http_method}
+                            </span>
+                          </div>
+                          {endpoint.description && (
+                            <p className="mb-2 text-sm text-slate-300">
+                              {endpoint.description}
+                            </p>
+                          )}
+                          <div className="text-sm text-slate-400">
+                            Expires:{" "}
+                            {isExpired ? "Expired" : `in ${expiresIn} hours`} |{" "}
+                            Created:{" "}
+                            {new Date(endpoint.created_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() =>
+                              handleGenerateMockData(endpoint.endpoint_id)
+                            }
+                            disabled={
+                              generateMockDataMutation.isPending || isExpired
+                            }
+                            className="bg-blue-600 px-3 py-2 text-sm hover:bg-blue-700"
+                          >
+                            Test API
+                          </Button>
+                          <Button
+                            onClick={() => handleDeleteEndpoint(endpoint.id)}
+                            disabled={deleteEndpointMutation.isPending}
+                            className="bg-red-600 px-3 py-2 text-sm hover:bg-red-700"
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="mb-4 flex gap-2">
+                        <code className="flex-1 rounded bg-black/30 p-3 font-mono text-sm break-all">
+                          {apiUrl}
+                        </code>
+                        <Button
+                          onClick={() => copyToClipboard(apiUrl)}
+                          className="bg-gray-600 px-3 hover:bg-gray-700"
+                        >
+                          Copy
+                        </Button>
+                      </div>
+
+                      <details className="mt-4">
+                        <summary className="cursor-pointer text-sm font-medium text-slate-300 hover:text-white">
+                          View Interface Code
+                        </summary>
+                        <pre className="mt-2 overflow-x-auto rounded bg-black/30 p-4 font-mono text-xs">
+                          <code>{endpoint.interface_code}</code>
+                        </pre>
+                      </details>
+                    </div>
+                  );
+                })}
               </div>
-            </div>
-          </div>
-
-          {/* TypeScript Interface */}
-          <div className="mt-8 rounded-xl border border-white/20 bg-white/10 p-6">
-            <h2 className="mb-4 text-2xl font-bold">TypeScript Interface</h2>
-            <pre className="overflow-x-auto rounded bg-black/30 p-4 font-mono text-sm">
-              <code>{project.interface_code}</code>
-            </pre>
+            )}
           </div>
 
           {/* Mock Data Preview */}
-          {mockData && (
-            <div className="mt-8 rounded-xl border border-white/20 bg-white/10 p-6">
+          {mockData && selectedEndpointId && (
+            <div className="mb-8 rounded-xl border border-white/20 bg-white/10 p-6">
               <h2 className="mb-4 text-2xl font-bold">Generated Mock Data</h2>
               <pre className="overflow-x-auto rounded bg-black/30 p-4 text-sm">
                 <code>{JSON.stringify(mockData, null, 2)}</code>
@@ -201,32 +319,95 @@ export default function ProjectDetailPage() {
             </div>
           )}
 
-          {/* Usage Examples */}
-          <div className="mt-8 rounded-xl border border-white/20 bg-white/10 p-6">
-            <h2 className="mb-4 text-2xl font-bold">Usage Examples</h2>
-            <div className="space-y-4">
-              <div>
-                <h3 className="mb-2 font-semibold">cURL:</h3>
-                <code className="block rounded bg-black/30 p-3 font-mono text-sm break-all">
-                  curl &quot;{apiUrl}&quot;
-                </code>
-              </div>
-              <div>
-                <h3 className="mb-2 font-semibold">JavaScript Fetch:</h3>
-                <code className="block rounded bg-black/30 p-3 font-mono text-sm whitespace-pre">
-                  {`fetch('${apiUrl}')
-  .then(response => response.json())
-  .then(data => console.log(data));`}
-                </code>
-              </div>
-              <div>
-                <h3 className="mb-2 font-semibold">Multiple Records:</h3>
-                <code className="block rounded bg-black/30 p-3 font-mono text-sm break-all">
-                  curl &quot;{apiUrl}?count=10&quot;
-                </code>
+          {/* Create Endpoint Form */}
+          {showCreateEndpoint && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+              <div className="w-full max-w-2xl rounded-xl bg-slate-800 p-6">
+                <h2 className="mb-6 text-2xl font-bold">
+                  Create New API Endpoint
+                </h2>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleCreateEndpoint(new FormData(e.currentTarget));
+                  }}
+                  className="space-y-4"
+                >
+                  <div>
+                    <label className="mb-2 block text-sm font-medium">
+                      API Name
+                    </label>
+                    <input
+                      name="name"
+                      required
+                      className="w-full rounded bg-slate-700 p-3 text-white"
+                      placeholder="e.g., User API"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-medium">
+                      Description (optional)
+                    </label>
+                    <input
+                      name="description"
+                      className="w-full rounded bg-slate-700 p-3 text-white"
+                      placeholder="e.g., Manages user data and authentication"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-medium">
+                      HTTP Method
+                    </label>
+                    <select
+                      name="http_method"
+                      className="w-full rounded bg-slate-700 p-3 text-white"
+                    >
+                      <option value="GET">GET</option>
+                      <option value="POST">POST</option>
+                      <option value="PUT">PUT</option>
+                      <option value="DELETE">DELETE</option>
+                      <option value="PATCH">PATCH</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-medium">
+                      TypeScript Interface
+                    </label>
+                    <textarea
+                      name="interface_code"
+                      required
+                      rows={8}
+                      className="w-full rounded bg-slate-700 p-3 font-mono text-sm text-white"
+                      placeholder={`interface User {
+  id: number;
+  name: string;
+  email: string;
+  createdAt: Date;
+}`}
+                    />
+                  </div>
+                  <div className="flex gap-4">
+                    <Button
+                      type="submit"
+                      disabled={createEndpointMutation.isPending}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      {createEndpointMutation.isPending
+                        ? "Creating..."
+                        : "Create API"}
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => setShowCreateEndpoint(false)}
+                      className="bg-gray-600 hover:bg-gray-700"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

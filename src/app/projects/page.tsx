@@ -112,11 +112,7 @@ export default function ProjectsPage() {
           ) : (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {data.projects.map((project) => {
-                const expiresIn = Math.ceil(
-                  (new Date(project.expires_at).getTime() - Date.now()) /
-                    (1000 * 60 * 60),
-                );
-                const isExpired = expiresIn <= 0;
+                const hasActiveEndpoints = project.stats.active_endpoints > 0;
 
                 return (
                   <div
@@ -129,10 +125,19 @@ export default function ProjectsPage() {
                       </h3>
                       <span
                         className={`rounded px-2 py-1 text-xs ${
-                          isExpired ? "bg-red-600" : "bg-green-600"
+                          project.stats.total_endpoints === 0 
+                            ? "bg-gray-600" 
+                            : hasActiveEndpoints 
+                            ? "bg-green-600" 
+                            : "bg-yellow-600"
                         }`}
                       >
-                        {isExpired ? "Expired" : "Active"}
+                        {project.stats.total_endpoints === 0 
+                          ? "Empty" 
+                          : hasActiveEndpoints 
+                          ? "Active" 
+                          : "No Active APIs"
+                        }
                       </span>
                     </div>
 
@@ -144,19 +149,15 @@ export default function ProjectsPage() {
 
                     <div className="mb-4 space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span>Method:</span>
+                        <span>Total APIs:</span>
                         <span className="rounded bg-blue-600 px-2 py-1 text-xs">
-                          {project.http_method}
+                          {project.stats.total_endpoints}
                         </span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span>Expires:</span>
-                        <span
-                          className={
-                            isExpired ? "text-red-300" : "text-yellow-300"
-                          }
-                        >
-                          {isExpired ? "Expired" : `${expiresIn}h`}
+                        <span>Active APIs:</span>
+                        <span className="rounded bg-green-600 px-2 py-1 text-xs">
+                          {project.stats.active_endpoints}
                         </span>
                       </div>
                       <div className="flex justify-between text-sm">

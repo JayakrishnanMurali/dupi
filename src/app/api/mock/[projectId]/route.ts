@@ -21,23 +21,24 @@ export async function GET(
     }
 
     const projectService = new SupabaseProjectService();
-    const mockData = await projectService.generateMockResponse(endpointId, count);
+    const mockData = await projectService.generateMockData(endpointId, count);
 
-    // Get project for logging
-    const project = await projectService.getProjectByEndpointId(endpointId);
+    // Get endpoint for logging
+    const endpoint = await projectService.getEndpoint(endpointId);
     const responseTime = Date.now() - startTime;
 
     // Log API usage (fire and forget)
-    if (project) {
+    if (endpoint) {
       projectService.logApiUsage(
-        project.id,
-        project.user_id,
+        endpoint.id,
+        endpoint.project_id,
+        '', // We don't have user_id for anonymous requests
         'GET',
         request.url,
         200,
         responseTime,
-        request.headers.get('user-agent') || undefined,
-        request.headers.get('x-forwarded-for') || undefined
+        request.headers.get('user-agent') ?? undefined,
+        request.headers.get('x-forwarded-for') ?? undefined
       ).catch(console.error);
     }
 
@@ -46,7 +47,8 @@ export async function GET(
       data: mockData,
       timestamp: new Date().toISOString(),
       metadata: {
-        project_id: project?.id || endpointId,
+        endpoint_id: endpointId,
+        project_id: endpoint?.project_id ?? '',
         generated_count: Array.isArray(mockData) ? mockData.length : 1,
       },
     });
@@ -83,23 +85,24 @@ export async function POST(
     }
 
     const projectService = new SupabaseProjectService();
-    const mockData = await projectService.generateMockResponse(endpointId, count);
+    const mockData = await projectService.generateMockData(endpointId, count);
 
-    // Get project for logging
-    const project = await projectService.getProjectByEndpointId(endpointId);
+    // Get endpoint for logging
+    const endpoint = await projectService.getEndpoint(endpointId);
     const responseTime = Date.now() - startTime;
 
     // Log API usage (fire and forget)
-    if (project) {
+    if (endpoint) {
       projectService.logApiUsage(
-        project.id,
-        project.user_id,
+        endpoint.id,
+        endpoint.project_id,
+        '', // We don't have user_id for anonymous requests
         'POST',
         request.url,
         200,
         responseTime,
-        request.headers.get('user-agent') || undefined,
-        request.headers.get('x-forwarded-for') || undefined
+        request.headers.get('user-agent') ?? undefined,
+        request.headers.get('x-forwarded-for') ?? undefined
       ).catch(console.error);
     }
 
@@ -108,7 +111,8 @@ export async function POST(
       data: mockData,
       timestamp: new Date().toISOString(),
       metadata: {
-        project_id: project?.id || endpointId,
+        endpoint_id: endpointId,
+        project_id: endpoint?.project_id ?? '',
         generated_count: Array.isArray(mockData) ? mockData.length : 1,
       },
     });

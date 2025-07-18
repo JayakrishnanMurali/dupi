@@ -17,6 +17,7 @@ export type Database = {
       api_usage_logs: {
         Row: {
           created_at: string | null;
+          endpoint_id: string;
           id: string;
           ip_address: unknown;
           project_id: string;
@@ -29,6 +30,7 @@ export type Database = {
         };
         Insert: {
           created_at?: string | null;
+          endpoint_id: string;
           id?: string;
           ip_address?: unknown;
           project_id: string;
@@ -41,6 +43,7 @@ export type Database = {
         };
         Update: {
           created_at?: string | null;
+          endpoint_id?: string;
           id?: string;
           ip_address?: unknown;
           project_id?: string;
@@ -53,6 +56,13 @@ export type Database = {
         };
         Relationships: [
           {
+            foreignKeyName: "api_usage_logs_endpoint_id_fkey";
+            columns: ["endpoint_id"];
+            isOneToOne: false;
+            referencedRelation: "endpoints";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "api_usage_logs_project_id_fkey";
             columns: ["project_id"];
             isOneToOne: false;
@@ -64,6 +74,100 @@ export type Database = {
             columns: ["user_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      endpoint_settings: {
+        Row: {
+          created_at: string | null;
+          custom_headers: Json | null;
+          enable_analytics: boolean | null;
+          endpoint_id: string;
+          id: string;
+          mock_data_count: number | null;
+          rate_limit_per_minute: number | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          custom_headers?: Json | null;
+          enable_analytics?: boolean | null;
+          endpoint_id: string;
+          id?: string;
+          mock_data_count?: number | null;
+          rate_limit_per_minute?: number | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          custom_headers?: Json | null;
+          enable_analytics?: boolean | null;
+          endpoint_id?: string;
+          id?: string;
+          mock_data_count?: number | null;
+          rate_limit_per_minute?: number | null;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "endpoint_settings_endpoint_id_fkey";
+            columns: ["endpoint_id"];
+            isOneToOne: true;
+            referencedRelation: "endpoints";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      endpoints: {
+        Row: {
+          created_at: string | null;
+          description: string | null;
+          endpoint_id: string;
+          expected_status_codes: number[];
+          expires_at: string;
+          http_method: Database["public"]["Enums"]["http_method"];
+          id: string;
+          interface_code: string;
+          name: string;
+          project_id: string;
+          status: Database["public"]["Enums"]["endpoint_status"];
+          updated_at: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          description?: string | null;
+          endpoint_id: string;
+          expected_status_codes?: number[];
+          expires_at: string;
+          http_method?: Database["public"]["Enums"]["http_method"];
+          id?: string;
+          interface_code: string;
+          name: string;
+          project_id: string;
+          status?: Database["public"]["Enums"]["endpoint_status"];
+          updated_at?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          description?: string | null;
+          endpoint_id?: string;
+          expected_status_codes?: number[];
+          expires_at?: string;
+          http_method?: Database["public"]["Enums"]["http_method"];
+          id?: string;
+          interface_code?: string;
+          name?: string;
+          project_id?: string;
+          status?: Database["public"]["Enums"]["endpoint_status"];
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "endpoints_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
             referencedColumns: ["id"];
           },
         ];
@@ -95,57 +199,11 @@ export type Database = {
         };
         Relationships: [];
       };
-      project_settings: {
-        Row: {
-          created_at: string | null;
-          custom_headers: Json | null;
-          enable_analytics: boolean | null;
-          id: string;
-          mock_data_count: number | null;
-          project_id: string;
-          rate_limit_per_minute: number | null;
-          updated_at: string | null;
-        };
-        Insert: {
-          created_at?: string | null;
-          custom_headers?: Json | null;
-          enable_analytics?: boolean | null;
-          id?: string;
-          mock_data_count?: number | null;
-          project_id: string;
-          rate_limit_per_minute?: number | null;
-          updated_at?: string | null;
-        };
-        Update: {
-          created_at?: string | null;
-          custom_headers?: Json | null;
-          enable_analytics?: boolean | null;
-          id?: string;
-          mock_data_count?: number | null;
-          project_id?: string;
-          rate_limit_per_minute?: number | null;
-          updated_at?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "project_settings_project_id_fkey";
-            columns: ["project_id"];
-            isOneToOne: true;
-            referencedRelation: "projects";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       projects: {
         Row: {
           created_at: string | null;
           description: string | null;
-          endpoint_id: string;
-          expected_status_codes: number[];
-          expires_at: string;
-          http_method: Database["public"]["Enums"]["http_method"];
           id: string;
-          interface_code: string;
           name: string;
           status: Database["public"]["Enums"]["project_status"];
           updated_at: string | null;
@@ -154,12 +212,7 @@ export type Database = {
         Insert: {
           created_at?: string | null;
           description?: string | null;
-          endpoint_id: string;
-          expected_status_codes?: number[];
-          expires_at: string;
-          http_method?: Database["public"]["Enums"]["http_method"];
           id?: string;
-          interface_code: string;
           name: string;
           status?: Database["public"]["Enums"]["project_status"];
           updated_at?: string | null;
@@ -168,12 +221,7 @@ export type Database = {
         Update: {
           created_at?: string | null;
           description?: string | null;
-          endpoint_id?: string;
-          expected_status_codes?: number[];
-          expires_at?: string;
-          http_method?: Database["public"]["Enums"]["http_method"];
           id?: string;
-          interface_code?: string;
           name?: string;
           status?: Database["public"]["Enums"]["project_status"];
           updated_at?: string | null;
@@ -190,9 +238,33 @@ export type Database = {
         ];
       };
     };
-    Views: Record<never, never>;
+    Views: {
+      project_stats: {
+        Row: {
+          active_endpoints: number | null;
+          expired_endpoints: number | null;
+          inactive_endpoints: number | null;
+          last_endpoint_created: string | null;
+          project_created_at: string | null;
+          project_id: string | null;
+          project_name: string | null;
+          project_updated_at: string | null;
+          total_endpoints: number | null;
+          user_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "projects_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+    };
     Functions: {
-      cleanup_expired_projects: {
+      cleanup_expired_endpoints: {
         Args: Record<PropertyKey, never>;
         Returns: number;
       };
@@ -200,14 +272,15 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: string;
       };
-      update_expired_projects: {
+      update_expired_endpoints: {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
       };
     };
     Enums: {
+      endpoint_status: "active" | "inactive" | "expired";
       http_method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-      project_status: "active" | "inactive" | "expired";
+      project_status: "active" | "inactive" | "archived";
     };
     CompositeTypes: Record<never, never>;
   };
@@ -337,8 +410,9 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      endpoint_status: ["active", "inactive", "expired"],
       http_method: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-      project_status: ["active", "inactive", "expired"],
+      project_status: ["active", "inactive", "archived"],
     },
   },
 } as const;
@@ -352,25 +426,40 @@ export type Project = Database["public"]["Tables"]["projects"]["Row"];
 export type ProjectInsert = Database["public"]["Tables"]["projects"]["Insert"];
 export type ProjectUpdate = Database["public"]["Tables"]["projects"]["Update"];
 
-export type ProjectSettings =
-  Database["public"]["Tables"]["project_settings"]["Row"];
-export type ProjectSettingsInsert =
-  Database["public"]["Tables"]["project_settings"]["Insert"];
-export type ProjectSettingsUpdate =
-  Database["public"]["Tables"]["project_settings"]["Update"];
+export type Endpoint = Database["public"]["Tables"]["endpoints"]["Row"];
+export type EndpointInsert = Database["public"]["Tables"]["endpoints"]["Insert"];
+export type EndpointUpdate = Database["public"]["Tables"]["endpoints"]["Update"];
+
+export type EndpointSettings = Database["public"]["Tables"]["endpoint_settings"]["Row"];
+export type EndpointSettingsInsert = Database["public"]["Tables"]["endpoint_settings"]["Insert"];
+export type EndpointSettingsUpdate = Database["public"]["Tables"]["endpoint_settings"]["Update"];
 
 export type ApiUsageLog = Database["public"]["Tables"]["api_usage_logs"]["Row"];
-export type ApiUsageLogInsert =
-  Database["public"]["Tables"]["api_usage_logs"]["Insert"];
-export type ApiUsageLogUpdate =
-  Database["public"]["Tables"]["api_usage_logs"]["Update"];
+export type ApiUsageLogInsert = Database["public"]["Tables"]["api_usage_logs"]["Insert"];
+export type ApiUsageLogUpdate = Database["public"]["Tables"]["api_usage_logs"]["Update"];
+
+export type ProjectStats = Database["public"]["Views"]["project_stats"]["Row"];
 
 export type HttpMethod = Database["public"]["Enums"]["http_method"];
 export type ProjectStatus = Database["public"]["Enums"]["project_status"];
+export type EndpointStatus = Database["public"]["Enums"]["endpoint_status"];
 
 // Extended types with relations
-export type ProjectWithSettings = Project & {
-  project_settings?: ProjectSettings;
+export type ProjectWithEndpoints = Project & {
+  endpoints: Endpoint[];
+};
+
+export type ProjectWithStats = Project & {
+  stats: {
+    total_endpoints: number;
+    active_endpoints: number;
+    expired_endpoints: number;
+    inactive_endpoints: number;
+  };
+};
+
+export type EndpointWithSettings = Endpoint & {
+  endpoint_settings?: EndpointSettings;
 };
 
 export type ProjectWithProfile = Project & {
@@ -379,11 +468,23 @@ export type ProjectWithProfile = Project & {
 
 export type FullProject = Project & {
   profiles: Profile;
-  project_settings?: ProjectSettings;
+  endpoints: EndpointWithSettings[];
 };
 
 // API request/response types
 export interface CreateProjectRequest {
+  name: string;
+  description?: string;
+}
+
+export interface UpdateProjectRequest {
+  name?: string;
+  description?: string;
+  status?: ProjectStatus;
+}
+
+export interface CreateEndpointRequest {
+  project_id: string;
   name: string;
   description?: string;
   interface_code: string;
@@ -392,19 +493,26 @@ export interface CreateProjectRequest {
   expiration_hours?: number;
 }
 
-export interface UpdateProjectRequest {
+export interface UpdateEndpointRequest {
   name?: string;
   description?: string;
   interface_code?: string;
   http_method?: HttpMethod;
   expected_status_codes?: number[];
   expires_at?: string;
-  status?: ProjectStatus;
+  status?: EndpointStatus;
 }
 
 export interface ProjectResponse {
   success: boolean;
   data?: Project | Project[];
+  error?: string;
+  timestamp: string;
+}
+
+export interface EndpointResponse {
+  success: boolean;
+  data?: Endpoint | Endpoint[];
   error?: string;
   timestamp: string;
 }
@@ -421,8 +529,27 @@ export interface MockDataResponse {
   data: unknown;
   timestamp: string;
   metadata?: {
+    endpoint_id: string;
     project_id: string;
     generated_count: number;
     interface_name?: string;
   };
+}
+
+// Statistics and analytics types
+export interface DashboardStats {
+  total_projects: number;
+  active_projects: number;
+  archived_projects: number;
+  total_endpoints: number;
+  active_endpoints: number;
+  expired_endpoints: number;
+  inactive_endpoints: number;
+  total_api_calls: number;
+  api_calls_today: number;
+}
+
+export interface ProjectListResponse {
+  projects: ProjectWithStats[];
+  stats: DashboardStats;
 }

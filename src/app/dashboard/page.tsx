@@ -92,27 +92,27 @@ export default function DashboardPage() {
               <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-4">
                 <div className="rounded-xl border border-white/20 bg-white/10 p-6 text-center">
                   <div className="text-3xl font-bold text-blue-400">
-                    {stats.active}
-                  </div>
-                  <div className="text-lg">Active Projects</div>
-                </div>
-                <div className="rounded-xl border border-white/20 bg-white/10 p-6 text-center">
-                  <div className="text-3xl font-bold text-green-400">
-                    {stats.total}
+                    {stats.total_projects}
                   </div>
                   <div className="text-lg">Total Projects</div>
                 </div>
                 <div className="rounded-xl border border-white/20 bg-white/10 p-6 text-center">
-                  <div className="text-3xl font-bold text-yellow-400">
-                    {stats.expired}
+                  <div className="text-3xl font-bold text-green-400">
+                    {stats.total_endpoints}
                   </div>
-                  <div className="text-lg">Expired</div>
+                  <div className="text-lg">Total APIs</div>
                 </div>
                 <div className="rounded-xl border border-white/20 bg-white/10 p-6 text-center">
-                  <div className="text-3xl font-bold text-gray-400">
-                    {stats.inactive}
+                  <div className="text-3xl font-bold text-yellow-400">
+                    {stats.active_endpoints}
                   </div>
-                  <div className="text-lg">Inactive</div>
+                  <div className="text-lg">Active APIs</div>
+                </div>
+                <div className="rounded-xl border border-white/20 bg-white/10 p-6 text-center">
+                  <div className="text-3xl font-bold text-purple-400">
+                    {stats.total_api_calls}
+                  </div>
+                  <div className="text-lg">API Calls</div>
                 </div>
               </div>
             )}
@@ -147,11 +147,7 @@ export default function DashboardPage() {
               ) : (
                 <div className="space-y-4">
                   {projects.map((project) => {
-                    const expiresIn = Math.ceil(
-                      (new Date(project.expires_at).getTime() - Date.now()) /
-                        (1000 * 60 * 60),
-                    );
-                    const isExpired = expiresIn <= 0;
+                    const hasActiveEndpoints = project.stats.active_endpoints > 0;
 
                     return (
                       <div
@@ -165,13 +161,22 @@ export default function DashboardPage() {
                             </h3>
                             <span
                               className={`rounded px-2 py-1 text-xs ${
-                                isExpired ? "bg-red-600" : "bg-green-600"
+                                project.stats.total_endpoints === 0 
+                                  ? "bg-gray-600" 
+                                  : hasActiveEndpoints 
+                                  ? "bg-green-600" 
+                                  : "bg-yellow-600"
                               }`}
                             >
-                              {isExpired ? "Expired" : "Active"}
+                              {project.stats.total_endpoints === 0 
+                                ? "Empty" 
+                                : hasActiveEndpoints 
+                                ? "Active" 
+                                : "No Active APIs"
+                              }
                             </span>
                             <span className="rounded bg-blue-600 px-2 py-1 text-xs">
-                              {project.http_method}
+                              {project.stats.total_endpoints} APIs
                             </span>
                           </div>
                           {project.description && (
@@ -187,8 +192,7 @@ export default function DashboardPage() {
                               ).toLocaleDateString()}
                             </span>
                             <span>
-                              Expires:{" "}
-                              {isExpired ? "Expired" : `in ${expiresIn} hours`}
+                              Active APIs: {project.stats.active_endpoints}
                             </span>
                           </div>
                         </div>
